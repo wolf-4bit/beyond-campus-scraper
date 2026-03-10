@@ -1,0 +1,21 @@
+[project]
+name = "scrapper"
+version = "0.1.0"
+description = "AI-powered university website scraper → structured markdown → S3"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "boto3>=1.42.61",
+    "firecrawl-py>=4.18.0",
+    "html2text>=2025.4.15",
+    "httpx>=0.28.1",
+    "langgraph>=1.0.10",
+    "litellm>=1.63,<1.70",
+    "lxml>=6.0.2",
+    "pydantic>=2.12.5",
+    "python-dotenv>=1.2.2",
+]
+
+[project.scripts]
+scrapper = "scrapper.cli:main"
