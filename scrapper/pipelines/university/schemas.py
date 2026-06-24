@@ -9,14 +9,13 @@ class CategoryDef:
     name: str
     classify_hint: str  # short description for URL classification
     structure_prompt: str  # detailed instructions for LLM structuring
-    max_urls: int = 50
+    max_urls: int = 1000  # safety ceiling only; the LLM decides relevance below this
 
 
 CATEGORY_REGISTRY: dict[str, CategoryDef] = {
     "courses": CategoryDef(
         name="courses",
         classify_hint="academic programs, degrees, course catalogs, department pages, majors/minors, curriculum, program requirements, admission requirements for programs, tuition and fees pages, international student requirements, transfer credit policies, graduate program prerequisites, GPA and test score requirements, application deadlines, academic departments, schools and colleges overview pages",
-        max_urls=300,
         structure_prompt="""\
 Create a comprehensive academic programs reference. For EACH program/course:
 

@@ -11,3 +11,4 @@ AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 # Swap provider prefix to switch: anthropic/claude-sonnet-4-6, openai/gpt-4.1-mini, etc.
 CLASSIFICATION_MODEL = "openai/gpt-4.1-mini"
 STRUCTURING_MODEL = "openai/gpt-4.1-mini"
+INDEXING_MODEL = "openai/gpt-4.1-mini"

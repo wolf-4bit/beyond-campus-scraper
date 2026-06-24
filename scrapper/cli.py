@@ -31,28 +31,43 @@ def main():
     if args.local:
         _run_local(args.url, categories)
     else:
+        from scrapper.core.cost import tracker
         from scrapper.pipelines.university.pipeline import scrape_university
         result = scrape_university.invoke({"url": args.url, "categories": categories})
         print(f"\nDone! Uploaded {len(result['s3_keys'])} files:")
         for key in result["s3_keys"]:
             print(f"  s3://{key}")
+        print(f"\n{tracker.summary()}")
 
 
 def _run_local(url: str, categories: list[str]):
     """Run pipeline but save to local files instead of S3."""
+    import json
     import os
+    from concurrent.futures import ThreadPoolExecutor
 
+    from scrapper.core.cost import tracker
     from scrapper.pipelines.university.tasks import (
+        build_index,
         classify_urls,
         discover_urls,
         scrape_pages,
         structure_content,
     )
 
+    tracker.reset()
+
     discovered = discover_urls.__wrapped__(url)
-    classified = classify_urls.__wrapped__(discovered["urls"], categories)
+    classified = classify_urls.__wrapped__(discovered["urls"], categories, discovered["url_meta"])
     scraped = scrape_pages.__wrapped__(classified, categories)
-    structured = structure_content.__wrapped__(scraped, discovered["university_name"], categories)
+
+    # Structure content and build the page index concurrently — both read `scraped`.
+    name = discovered["university_name"]
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        structured_f = ex.submit(structure_content.__wrapped__, scraped, name, categories)
+        index_f = ex.submit(build_index.__wrapped__, scraped, name)
+        structured = structured_f.result()
+        index_md = index_f.result()
 
     name_slug = discovered["university_name"].lower().replace(" ", "_")
     out_dir = os.path.join("output", name_slug)
@@ -64,7 +79,18 @@ def _run_local(url: str, categories: list[str]):
             f.write(md)
         print(f"  Wrote {path}")
 
+    index_path = os.path.join(out_dir, "index.md")
+    with open(index_path, "w") as f:
+        f.write(index_md)
+    print(f"  Wrote {index_path}")
+
+    cost_path = os.path.join(out_dir, "cost.json")
+    with open(cost_path, "w") as f:
+        json.dump(tracker.as_dict(), f, indent=2)
+    print(f"  Wrote {cost_path}")
+
     print(f"\nDone! Saved {len(structured)} files to {out_dir}/")
+    print(f"\n{tracker.summary()}")
 
 
 if __name__ == "__main__":
